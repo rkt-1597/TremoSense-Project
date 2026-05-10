@@ -4,16 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <stdio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(IMU, LOG_LEVEL_INF);
 
-#define IMU_SLEEP_MS 500
+#define IMU_SLEEP_MS 100
 
 static int print_samples;
 static int lsm6dsl_trig_cnt;
@@ -61,33 +63,59 @@ static void lsm6dsl_trigger_handler(const struct device *dev,
 }
 #endif
 
-int main(void)
+int IMU_init(const struct device *imu_dev)
 {
-	int cnt = 0;
-	char out_str[128];
-	struct sensor_value odr_attr;
-	const struct device *const lsm6dsl_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
+	int err;
+        struct sensor_value odr_attr, acc_full_scale, gyro_full_scale;
 
-	if (!device_is_ready(lsm6dsl_dev)) {
+	if (!device_is_ready(imu_dev)) {
 		LOG_ERR("device not ready");
-		return 0;
+		return -ENODEV;
 	}
 
-	/* set accel/gyro sampling frequency to 104 Hz */
-	odr_attr.val1 = 104;
+	odr_attr.val1 = 208;
 	odr_attr.val2 = 0;
 
-	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_ACCEL_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
-		LOG_ERR("Cannot set sampling frequency for accelerometer");
-		return 0;
+	if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for accel: %d", err);
+		return err;
 	}
 
-	if (sensor_attr_set(lsm6dsl_dev, SENSOR_CHAN_GYRO_XYZ,
-			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
-		LOG_ERR("Cannot set sampling frequency for gyro");
-		return 0;
+	if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_GYRO_XYZ,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for gyro: %d", err);
+		return err;
 	}
+
+        acc_full_scale.val1 = 39;
+        acc_full_scale.val2 = 226600;
+        
+        if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_FULL_SCALE, &acc_full_scale)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for accel: %d", err);
+		return err;
+	}
+
+        gyro_full_scale.val1 = 8;
+        gyro_full_scale.val2 = 726646;
+        
+        if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_GYRO_XYZ,
+			    SENSOR_ATTR_FULL_SCALE, &gyro_full_scale)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for gyro: %d", err);
+		return err;
+	}
+
+        return 0;
+}
+
+int main(void)
+{
+	
+        int cnt = 0, err;
+	char out_str[128];
+	const struct device *const lsm6dsl_dev = DEVICE_DT_GET_ONE(st_lsm6dsl);
+        IMU_init(lsm6dsl_dev);
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	struct sensor_trigger trig;
@@ -95,18 +123,17 @@ int main(void)
 	trig.type = SENSOR_TRIG_DATA_READY;
 	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
 
-	if (sensor_trigger_set(lsm6dsl_dev, &trig, lsm6dsl_trigger_handler) != 0) {
-		LOG_ERR("Could not set sensor type and channel");
-		return 0;
+	if ((err = sensor_trigger_set(lsm6dsl_dev, &trig, lsm6dsl_trigger_handler)) != 0) {
+		LOG_ERR("Could not set sensor type and channel: %d", err);
+		return err;
 	}
 #endif
 
-	if (sensor_sample_fetch(lsm6dsl_dev) < 0) {
-		LOG_ERR("Sensor sample update error");
-		return 0;
+	if ((err = sensor_sample_fetch(lsm6dsl_dev)) < 0) {
+		LOG_ERR("Sensor sample update error: %d", err);
+		return err;
 	}
 
-	LOG_INF("LSM6DSL sensor samples:");
 	while (1) {
 		/* Erase previous */
                 printk("\033[2J\033[H");
@@ -130,4 +157,5 @@ int main(void)
 		print_samples = 1;
 		k_sleep(K_MSEC(IMU_SLEEP_MS));
 	}
+	return 0;
 }
