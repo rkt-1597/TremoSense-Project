@@ -1,0 +1,13 @@
+.vscode/
+.venv/
+tags
+build/
+bootloader/
+zephyr-sdk-*/
+*.tar*
+*.gz
+*.xz
+.west/
+zephyr/
+modules/
+tools/
