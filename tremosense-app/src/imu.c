@@ -1,0 +1,176 @@
+#include "imu.h"
+
+#include <zephyr/kernel.h>
+#include <stdio.h>
+#include <zephyr/sys/util.h>
+
+LOG_MODULE_REGISTER(IMU, LOG_LEVEL_INF);
+
+int print_samples = 0, lsm6ds3_trc_trig_cnt = 0, cnt = 0;
+char out_str[128];
+
+struct sensor_value accel_x_out, accel_y_out, accel_z_out;
+struct sensor_value gyro_x_out, gyro_y_out, gyro_z_out;
+
+double accel_offset_x = 0, accel_offset_y = 0, accel_offset_z = 0;
+double gyro_offset_x = 0, gyro_offset_y = 0, gyro_offset_z = 0;
+
+void lsm6ds3_trc_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	static struct sensor_value accel_x, accel_y, accel_z;
+	static struct sensor_value gyro_x, gyro_y, gyro_z;
+
+	lsm6ds3_trc_trig_cnt++;
+
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ACCEL_XYZ);
+	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_X, &accel_x);
+	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Y, &accel_y);
+	sensor_channel_get(dev, SENSOR_CHAN_ACCEL_Z, &accel_z);
+
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_GYRO_XYZ);
+	sensor_channel_get(dev, SENSOR_CHAN_GYRO_X, &gyro_x);
+	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
+	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
+
+	if (print_samples) {
+		print_samples = 0;
+
+		accel_x_out = accel_x;
+		accel_y_out = accel_y;
+		accel_z_out = accel_z;
+
+		gyro_x_out = gyro_x;
+		gyro_y_out = gyro_y;
+		gyro_z_out = gyro_z;
+	}
+
+}
+
+void calibrate_imu(void)
+{
+        int samples = 300;
+        double sum_ax = 0, sum_ay = 0, sum_az = 0;
+        double sum_gx = 0, sum_gy = 0, sum_gz = 0;
+
+        printk("Please place the board flat on a table and DO NOT TOUCH IT.\n");
+        k_msleep(3000); 
+        printk("\n--- STARTING CALIBRATION ---\n");
+
+        for (int i = 0; i < samples; i++) {
+		print_samples = 1;
+                sum_ax += sensor_value_to_double(&accel_x_out);
+                sum_ay += sensor_value_to_double(&accel_y_out);
+                sum_az += sensor_value_to_double(&accel_z_out);
+
+                sum_gx += sensor_value_to_double(&gyro_x_out);
+                sum_gy += sensor_value_to_double(&gyro_y_out);
+                sum_gz += sensor_value_to_double(&gyro_z_out);
+
+                k_msleep(10); 
+        }
+
+        gyro_offset_x = sum_gx / samples;
+        gyro_offset_y = sum_gy / samples;
+        gyro_offset_z = sum_gz / samples;
+
+        accel_offset_x = sum_ax / samples;
+        accel_offset_y = sum_ay / samples;
+        accel_offset_z = (sum_az / samples) - 9.80665; 
+
+        printk("Calibration Complete! (5s pause for user to check offset)\n");
+        printk("Accel Offsets: X: %.3f, Y: %.3f, Z: %.3f\n", accel_offset_x, accel_offset_y, accel_offset_z);
+        printk("Gyro Offsets:  X: %.3f, Y: %.3f, Z: %.3f\n\n", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+        k_msleep(5000); 
+}
+
+int imu_init(const struct device *imu_dev)
+{
+	int err;
+	struct sensor_trigger trig;
+        struct sensor_value odr_attr, acc_full_scale, gyro_full_scale;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ACCEL_XYZ;
+
+	if (!device_is_ready(imu_dev)) {
+		LOG_ERR("device not ready");
+		return -EIO;
+	}
+
+	odr_attr.val1 = 208;
+	odr_attr.val2 = 0;
+
+	if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for accel: %d", err);
+		return err;
+	}
+
+	if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_GYRO_XYZ,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for gyro: %d", err);
+		return err;
+	}
+
+	/* 2g accel measurment range FS */
+        acc_full_scale.val1 = 19;
+        acc_full_scale.val2 = 613300;
+        
+        if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_ACCEL_XYZ,
+			    SENSOR_ATTR_FULL_SCALE, &acc_full_scale)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for accel: %d", err);
+		return err;
+	}
+
+	/* 125 dps gyro measurment range FS */
+        gyro_full_scale.val1 = 2;
+        gyro_full_scale.val2 = 181659;
+        
+        if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_GYRO_XYZ,
+			    SENSOR_ATTR_FULL_SCALE, &gyro_full_scale)) < 0) {
+		LOG_ERR("Cannot set sampling frequency for gyro: %d", err);
+		return err;
+	}
+
+	if ((err = sensor_trigger_set(imu_dev, &trig, lsm6ds3_trc_trigger_handler)) != 0) {
+		LOG_ERR("Could not set sensor type and channel: %d", err);
+		return err;
+	}
+
+	if ((err = sensor_sample_fetch(imu_dev)) < 0) {
+		LOG_ERR("Sensor sample update error: %d", err);
+		return err;
+	}
+
+	#if CONFIG_IMU_CALIBRATION_TESTING
+		calibrate_imu();
+	#endif
+
+        return 0;
+}
+
+int imu_readings(void)
+{
+	printk("\033[2J\033[H");
+
+	/* lsm6ds3_trc accel */
+	snprintf(out_str, sizeof(out_str), "accel x:%f m/s2 y:%f m/s2 z:%f m/s2",
+							sensor_value_to_double(&accel_x_out) - accel_offset_x,
+							sensor_value_to_double(&accel_y_out) - accel_offset_y,
+							sensor_value_to_double(&accel_z_out) - accel_offset_z);
+	printk("%s\n", out_str);
+
+	/* lsm6ds3_trc gyro */
+	snprintf(out_str, sizeof(out_str), "gyro  x:%f dps  y:%f dps  z:%f dps ",
+							(sensor_value_to_double(&gyro_x_out)* 57.2957795) - gyro_offset_x* 57.2957795,
+							(sensor_value_to_double(&gyro_y_out)* 57.2957795) - gyro_offset_y* 57.2957795,
+							(sensor_value_to_double(&gyro_z_out)* 57.2957795) - gyro_offset_z* 57.2957795);
+	printk("%s\n", out_str);
+
+	LOG_INF("loop:%d trig_cnt:%d\n\n", ++cnt, lsm6ds3_trc_trig_cnt);
+
+	print_samples = 1;
+
+	return 0;
+}
