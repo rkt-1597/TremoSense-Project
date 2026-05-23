@@ -15,15 +15,19 @@
 };
 
 / {
+        aliases {
+                servo-roll = &roll_servo;
+                servo-pitch = &pitch_servo;
+        };
         spoon_motors {
-                roll_servo {
+                roll_servo: rollservo {
                         compatible = "ts-servos";
                         pwms = <&pwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
                         min-pulse-us = <722>;
                         max-pulse-us = <2278>;
                         orientation = "roll";
                 };
-                picth_servo {
+                pitch_servo: pitchservo {
                         compatible = "ts-servos";
                         pwms = <&pwm0 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
                         min-pulse-us = <722>;

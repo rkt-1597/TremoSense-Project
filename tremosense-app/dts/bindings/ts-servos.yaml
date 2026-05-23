@@ -1,0 +1,27 @@
+description: |
+  Group of PWM-controlled servos.
+  
+include: base.yaml
+
+compatible: "ts-servos"
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+
+  min-pulse-us:
+    type: int
+    required: true
+    default: 600
+    description: Minimum pulse width for Servo PWM in microseconds
+  
+  max-pulse-us:
+    type: int
+    required: true
+    default: 2400
+    description: Maximum pulse width for Servo PWM in microseconds
+
+  orientation:
+    type: string
+    description: Axis controlled by Servo (roll, pitch, yaw) 

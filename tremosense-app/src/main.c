@@ -1,4 +1,5 @@
 #include "imu.h"
+#include "pwm.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -14,10 +15,15 @@ int main(void)
 	}
 
 	while (1) {
-		if ((err = imu_readings()) < 0) {
+		if ((err = imu_readings()) < 0)
 			return err;
-		}
 		k_sleep(K_MSEC(IMU_SLEEP_MS));
+
+		if ((err = servo_sweep(&roll)) < 0)
+			return err;
+		k_sleep(K_MSEC(PWM_SLEEP_MS));
+		if ((err = servo_sweep(&pitch)) < 0)
+			return err;		
 	}
 
 	return 0;
