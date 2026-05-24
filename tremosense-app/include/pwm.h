@@ -1,15 +1,23 @@
 #ifndef PWM_H
 #define PWM_H
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
 
 extern const struct pwm_dt_spec roll;
 extern const struct pwm_dt_spec pitch;
 
-#define PWM_SLEEP_MS 1000      // 100 ms sleep time between consecutive readings
+#define CONFIG_PWM_TEST_RB_LED 1
+#define PWM_TASK_STACK_SIZE_BYTES 1024
+
+#define PWM_SLEEP_MS 1000 
+
+extern k_tid_t pwm_tid;
 
 int set_servo_angle(const struct pwm_dt_spec *pwm_dev, uint8_t angle_deg);
 
 int servo_sweep(const struct pwm_dt_spec *pwm_dev);
+
+void pwm_thread_function(void *arg1, void *arg2, void *arg3);
 
 #endif /* PWM_H */

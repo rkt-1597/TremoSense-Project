@@ -1,6 +1,5 @@
 #include "pwm.h"
 #include <zephyr/logging/log.h>
-#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 
 LOG_MODULE_REGISTER(PWM, LOG_LEVEL_INF);
@@ -48,7 +47,32 @@ int servo_sweep(const struct pwm_dt_spec *pwm_dev)
 			return ret;
 		}
 		LOG_INF("Servo Angle set to: %d\n", angle_deg);
-		k_sleep(K_MSEC(20));
+		#if CONFIG_PWM_TEST_RB_LED
+			k_sleep(K_MSEC(1));
+		#else
+			k_sleep(K_MSEC(20));
+		#endif
 	}
 	return 0;
+}
+
+void pwm_thread_function(void *arg1, void *arg2, void *arg3) {
+	while(1) {
+	#if CONFIG_PWM_TEST_RB_LED
+		int err;
+		if ((err = servo_sweep(&roll)) < 0) {
+			LOG_ERR("Error sweeping roll servo: %d", err);
+			k_thread_abort(pwm_tid);
+		}
+
+		k_sleep(K_MSEC(PWM_SLEEP_MS));
+
+		if ((err = servo_sweep(&pitch)) < 0) {
+			LOG_ERR("Error sweeping pitch servo: %d", err);
+			k_thread_abort(pwm_tid);
+		}
+
+		k_sleep(K_MSEC(PWM_SLEEP_MS));
+	#endif
+	}
 }

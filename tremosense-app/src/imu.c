@@ -1,6 +1,5 @@
 #include "imu.h"
 
-#include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/util.h>
 
@@ -173,4 +172,16 @@ int imu_readings(void)
 	print_samples = 1;
 
 	return 0;
+}
+
+void imu_thread_function(void *arg1, void *arg2, void *arg3) {
+	int err;
+
+	while (1) {
+		if ((err = imu_readings()) < 0) {
+			LOG_ERR("Error reading IMU data: %d", err);
+			k_thread_abort(imu_tid);
+		}
+		k_sleep(K_MSEC(IMU_SLEEP_MS));		
+	}
 }
