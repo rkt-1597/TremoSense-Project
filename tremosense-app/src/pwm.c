@@ -1,6 +1,4 @@
 #include "pwm.h"
-#include <zephyr/logging/log.h>
-#include <zephyr/devicetree.h>
 
 LOG_MODULE_REGISTER(PWM, LOG_LEVEL_INF);
 

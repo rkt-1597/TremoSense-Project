@@ -5,9 +5,9 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/devicetree.h>
 
-#define IMU_SLEEP_MS 100       // 100 ms sleep time between consecutive readings
-#define CONFIG_IMU_CALIBRATION_TESTING 1
+#define IMU_SLEEP_MS 100
 #define IMU_THREAD_STACK_SIZE_BYTES 1024
 
 extern k_tid_t imu_tid;

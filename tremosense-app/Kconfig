@@ -1,0 +1,17 @@
+source "Kconfig.zephyr"
+
+config IMU_CALIBRATION_WHILE_TESTING
+        bool "Enable calibration  of IMU at boot"
+        default n
+        help
+                If enabled, the IMU collects 300 samples over span of 3 seconds 
+                and averages values for all 6 measurments (accelerometer and 
+                gyroscope in x,y,z axes)
+
+config PWM_TEST_RB_LED
+        bool "Enable PWM test for RB LED"
+        default n
+        help
+                If enabled, the RB LED will be used for testing PWM feature. 
+                Green LED indicates Roll Servo motor and Red LED indicates Pitch 
+                Servo motor.

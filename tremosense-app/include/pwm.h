@@ -3,11 +3,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/logging/log.h>
 
 extern const struct pwm_dt_spec roll;
 extern const struct pwm_dt_spec pitch;
 
-#define CONFIG_PWM_TEST_RB_LED 1
 #define PWM_TASK_STACK_SIZE_BYTES 1024
 
 #define PWM_SLEEP_MS 1000 

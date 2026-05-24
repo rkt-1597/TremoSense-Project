@@ -1,4 +1,5 @@
 #include "imu.h"
+#include "pwm.h"
 
 #include <stdio.h>
 #include <zephyr/sys/util.h>
@@ -7,6 +8,11 @@ LOG_MODULE_REGISTER(IMU, LOG_LEVEL_INF);
 
 int print_samples = 0, lsm6ds3_trc_trig_cnt = 0, cnt = 0;
 char out_str[128];
+
+const struct pwm_dt_spec imu_calib_led = PWM_DT_SPEC_GET(DT_ALIAS(imu_calib));
+#define IMU_CALIB_LED_MIN    PWM_USEC(DT_PROP(DT_ALIAS(imu_calib), min_pulse_us))
+#define IMU_CALIB_LED_MAX    PWM_USEC(DT_PROP(DT_ALIAS(imu_calib), max_pulse_us))
+#define IMU_CALIB_LED_PERIOD (IMU_CALIB_LED_MAX - IMU_CALIB_LED_MIN)
 
 struct sensor_value accel_x_out, accel_y_out, accel_z_out;
 struct sensor_value gyro_x_out, gyro_y_out, gyro_z_out;
@@ -53,7 +59,11 @@ void calibrate_imu(void)
         double sum_gx = 0, sum_gy = 0, sum_gz = 0;
 
         printk("Please place the board flat on a table and DO NOT TOUCH IT.\n");
-        k_msleep(3000); 
+
+	uint32_t pulse = IMU_CALIB_LED_MAX;
+	pwm_set_pulse_dt(&imu_calib_led, pulse);
+
+        k_msleep(3000);
         printk("\n--- STARTING CALIBRATION ---\n");
 
         for (int i = 0; i < samples; i++) {
@@ -80,7 +90,16 @@ void calibrate_imu(void)
         printk("Calibration Complete! (5s pause for user to check offset)\n");
         printk("Accel Offsets: X: %.3f, Y: %.3f, Z: %.3f\n", accel_offset_x, accel_offset_y, accel_offset_z);
         printk("Gyro Offsets:  X: %.3f, Y: %.3f, Z: %.3f\n\n", gyro_offset_x, gyro_offset_y, gyro_offset_z);
-        k_msleep(5000); 
+        
+	uint32_t wait_start = k_uptime_get_32();
+        while ((k_uptime_get_32() - wait_start) < 5000) {
+		if(pulse == IMU_CALIB_LED_MAX)
+			pulse = IMU_CALIB_LED_MIN;
+		else
+			pulse = IMU_CALIB_LED_MAX; 
+		pwm_set_pulse_dt(&imu_calib_led, pulse);
+                k_msleep(200); 
+        }
 }
 
 int imu_init(const struct device *imu_dev)
@@ -142,7 +161,7 @@ int imu_init(const struct device *imu_dev)
 		return err;
 	}
 
-	#if CONFIG_IMU_CALIBRATION_TESTING
+	#if CONFIG_IMU_CALIBRATION_WHILE_TESTING
 		calibrate_imu();
 	#endif
 
