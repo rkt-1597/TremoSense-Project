@@ -1,5 +1,4 @@
 #include "ekf.h"
-#include <math.h>
 
 static float x[2];      
 static float P[2][2];  
@@ -99,6 +98,12 @@ void ekf_update(float ax, float ay, float az,
     Pn[1][1] = IK[1][0]*P[0][1] + IK[1][1]*P[1][1];
     P[0][0]=Pn[0][0]; P[0][1]=Pn[0][1];
     P[1][0]=Pn[1][0]; P[1][1]=Pn[1][1];
+
+    if (x[1] > MAX_PITCH_RAD) {
+        x[1] = MAX_PITCH_RAD;
+    } else if (x[1] < -MAX_PITCH_RAD) {
+        x[1] = -MAX_PITCH_RAD;
+    }
 
     result->roll  = x[0] * RAD_TO_DEG;
     result->pitch = x[1] * RAD_TO_DEG;

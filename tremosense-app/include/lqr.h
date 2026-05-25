@@ -6,6 +6,8 @@
 #define DEG_TO_RAD 0.01745329f
 #define RAD_TO_DEG 57.2957795f
 
+#define MAX_PITCH_RAD 1.39626f
+
 void lqr_update(float phi_deg, float theta_deg, 
                 float p_raw, float q_raw, 
                 float bias_phi, float bias_theta, 

@@ -1,6 +1,7 @@
 #ifndef EKF_H
 #define EKF_H
 
+#include <math.h>
 #include <zephyr/logging/log.h>
 #include "constants.h"
 

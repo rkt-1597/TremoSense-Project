@@ -193,24 +193,28 @@ int imu_readings(void)
 void imu_thread_function(void *arg1, void *arg2, void *arg3) {
 	int err;
 
+	uint32_t last_time = k_uptime_get_32();
 	while (1) {
 		if ((err = imu_readings()) < 0) {
 			LOG_ERR("Error reading IMU data: %d", err);
 			k_thread_abort(imu_tid);
 		}
 
+		uint32_t current_time = k_uptime_get_32();
+		float actual_dt_seconds = (float)(current_time - last_time) / 1000.0f;
+		last_time = current_time;
 		ekf_update(sensor_value_to_double(&accel_x_out) - accel_offset_x,
 			   sensor_value_to_double(&accel_y_out) - accel_offset_y,
 			   sensor_value_to_double(&accel_z_out) - accel_offset_z,
 			   sensor_value_to_double(&gyro_x_out) - gyro_offset_x,
 			   sensor_value_to_double(&gyro_y_out) - gyro_offset_y,
 			   sensor_value_to_double(&gyro_z_out) - gyro_offset_z,
-			   IMU_SLEEP_MS/1000.0f, 
+			   actual_dt_seconds, 
 			   Q_GYRO_PROCESS_NOISE, 
 			   R_ACCEL_MEASUREMENT_NOISE, 
 			   &ekf_calculated_results);
 
-		printk("Est. Roll: %.2f deg, Est. Pitch: %.2f deg\n\n", 
+		printk("Est. Roll: %.2f deg | Est. Pitch: %.2f deg\n\n",
 		        ekf_calculated_results.roll, 
 		        ekf_calculated_results.pitch);
 
@@ -223,7 +227,7 @@ void imu_thread_function(void *arg1, void *arg2, void *arg3) {
 			   &target_servo_roll_deg,
 			   &target_servo_pitch_deg);
 		
-		printk("Servo Calc. Roll: %.2f deg, Pitch: %.2f deg\n\n", 
+		printk("Servo Calc. Roll: %.2f deg | Pitch: %.2f deg\n\n",
 		        target_servo_roll_deg, 
 		        target_servo_pitch_deg);
 
