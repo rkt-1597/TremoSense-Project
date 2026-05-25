@@ -2,6 +2,8 @@
 
 LOG_MODULE_REGISTER(PWM, LOG_LEVEL_INF);
 
+lqr_result_t lqr_val_to_servos;
+
 const struct pwm_dt_spec roll = PWM_DT_SPEC_GET(DT_ALIAS(servo_roll));
 const struct pwm_dt_spec pitch = PWM_DT_SPEC_GET(DT_ALIAS(servo_pitch));
 
@@ -13,19 +15,26 @@ const struct pwm_dt_spec pitch = PWM_DT_SPEC_GET(DT_ALIAS(servo_pitch));
 #define PITCH_SERVO_MAX    PWM_USEC(DT_PROP(DT_ALIAS(servo_pitch), max_pulse_us))
 #define PITCH_SERVO_PERIOD (PITCH_SERVO_MAX - PITCH_SERVO_MIN)
 
-int set_servo_angle(const struct pwm_dt_spec *pwm_dev, uint8_t angle_deg)
+int set_servo_angle(const struct pwm_dt_spec *pwm_dev_roll, 
+                   const struct pwm_dt_spec *pwm_dev_pitch,
+                   lqr_result_t *result)
 {
-	uint32_t pulse = 0;
+	uint32_t err, pulse_roll = 0, pulse_pitch = 0;
 	
-	if (angle_deg > 180) 
-		angle_deg = 180;
+	if (result->roll_to_servo > 180) 
+		result->roll_to_servo = 180;
+	if (result->pitch_to_servo > 180) 
+		result->pitch_to_servo = 180;
 
-	if (pwm_dev == &roll)    
-		pulse = ROLL_SERVO_MIN + ((ROLL_SERVO_PERIOD * angle_deg) / 180);
-	else if (pwm_dev == &pitch)    
-		pulse = PITCH_SERVO_MIN + ((PITCH_SERVO_PERIOD * angle_deg) / 180);
+	pulse_roll = ROLL_SERVO_MIN + ((ROLL_SERVO_PERIOD * result->roll_to_servo) / 180);
+	if ((err = pwm_set_pulse_dt(pwm_dev_roll, pulse_roll)) < 0)
+		return err;
+	
+	pulse_pitch = PITCH_SERVO_MIN + ((PITCH_SERVO_PERIOD * result->pitch_to_servo) / 180);
+	if ((err = pwm_set_pulse_dt(pwm_dev_pitch, pulse_pitch)) < 0)
+		return err;
 
-    	return pwm_set_pulse_dt(pwm_dev, pulse);
+    	return 0;
 }
 
 int servo_sweep(const struct pwm_dt_spec *pwm_dev)
@@ -71,6 +80,11 @@ void pwm_thread_function(void *arg1, void *arg2, void *arg3) {
 		}
 
 		k_sleep(K_MSEC(PWM_SLEEP_MS));
+	#else
+		k_msgq_get(&lqr_res, &lqr_val_to_servos, K_FOREVER);
+		set_servo_angle(&roll, &pitch, &lqr_val_to_servos);
+
 	#endif
+
 	}
 }

@@ -12,6 +12,8 @@
 
 extern k_tid_t imu_tid;
 
+extern struct k_sem imu_sem;
+
 void lsm6ds3_trc_trigger_handler(const struct device *dev,
 			     const struct sensor_trigger *trig);
 
@@ -21,6 +23,6 @@ void calibrate_imu(void);
 
 int imu_readings(void);
 
-void imu_thread_function(void *arg1, void *arg2, void *arg3);
+void imu_thread_function(const struct device *dev, void *arg2, void *arg3);
 
 #endif /* IMU_H */
