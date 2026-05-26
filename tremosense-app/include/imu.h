@@ -8,7 +8,7 @@
 #include <zephyr/devicetree.h>
 
 #define IMU_SLEEP_MS 100
-#define IMU_THREAD_STACK_SIZE_BYTES 1024
+#define IMU_THREAD_STACK_SIZE_BYTES 2048
 
 extern k_tid_t imu_tid;
 

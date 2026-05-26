@@ -4,6 +4,8 @@
 static float x[2];      
 static float P[2][2];  
 
+ekf_result_t ekf_calculated_results;
+
 void ekf_init(void)
 {
     x[0] = 0.0f; x[1] = 0.0f;
@@ -98,6 +100,6 @@ void ekf_update(float ax, float ay, float az,
     P[0][0]=Pn[0][0]; P[0][1]=Pn[0][1];
     P[1][0]=Pn[1][0]; P[1][1]=Pn[1][1];
 
-    result->roll  = x[0] * (180.0f / 3.14159265f);
-    result->pitch = x[1] * (180.0f / 3.14159265f);
+    result->roll  = x[0] * RAD_TO_DEG;
+    result->pitch = x[1] * RAD_TO_DEG;
 }

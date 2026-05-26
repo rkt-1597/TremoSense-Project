@@ -1,5 +1,6 @@
 #include "imu.h"
 #include "pwm.h"
+#include "ekf.h"
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -22,6 +23,9 @@ int main(void)
 		LOG_ERR("Failed to initialize IMU: %d", err);
 		return err;
 	}
+
+
+	ekf_init();	
 
 	imu_tid = k_thread_create(&imu_thread_data, 
 				  imu_thread_stack,

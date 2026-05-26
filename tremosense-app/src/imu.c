@@ -1,5 +1,6 @@
 #include "imu.h"
 #include "pwm.h"
+#include "ekf.h"
 
 #include <stdio.h>
 #include <zephyr/sys/util.h>
@@ -16,7 +17,6 @@ const struct pwm_dt_spec imu_calib_led = PWM_DT_SPEC_GET(DT_ALIAS(imu_calib));
 
 struct sensor_value accel_x_out, accel_y_out, accel_z_out;
 struct sensor_value gyro_x_out, gyro_y_out, gyro_z_out;
-
 double accel_offset_x = 0, accel_offset_y = 0, accel_offset_z = 0;
 double gyro_offset_x = 0, gyro_offset_y = 0, gyro_offset_z = 0;
 
@@ -38,9 +38,6 @@ void lsm6ds3_trc_trigger_handler(const struct device *dev,
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Y, &gyro_y);
 	sensor_channel_get(dev, SENSOR_CHAN_GYRO_Z, &gyro_z);
 
-	if (print_samples) {
-		print_samples = 0;
-
 		accel_x_out = accel_x;
 		accel_y_out = accel_y;
 		accel_z_out = accel_z;
@@ -48,8 +45,6 @@ void lsm6ds3_trc_trigger_handler(const struct device *dev,
 		gyro_x_out = gyro_x;
 		gyro_y_out = gyro_y;
 		gyro_z_out = gyro_z;
-	}
-
 }
 
 void calibrate_imu(void)
@@ -181,14 +176,13 @@ int imu_readings(void)
 
 	/* lsm6ds3_trc gyro */
 	snprintf(out_str, sizeof(out_str), "gyro  x:%f dps  y:%f dps  z:%f dps ",
-							(sensor_value_to_double(&gyro_x_out)* 57.2957795) - gyro_offset_x* 57.2957795,
-							(sensor_value_to_double(&gyro_y_out)* 57.2957795) - gyro_offset_y* 57.2957795,
-							(sensor_value_to_double(&gyro_z_out)* 57.2957795) - gyro_offset_z* 57.2957795);
+							(sensor_value_to_double(&gyro_x_out)* RAD_TO_DEG) - gyro_offset_x* RAD_TO_DEG,
+							(sensor_value_to_double(&gyro_y_out)* RAD_TO_DEG) - gyro_offset_y* RAD_TO_DEG,
+							(sensor_value_to_double(&gyro_z_out)* RAD_TO_DEG) - gyro_offset_z* RAD_TO_DEG);
 	printk("%s\n", out_str);
 
 	LOG_INF("loop:%d trig_cnt:%d\n\n", ++cnt, lsm6ds3_trc_trig_cnt);
 
-	print_samples = 1;
 
 	return 0;
 }
@@ -201,6 +195,22 @@ void imu_thread_function(void *arg1, void *arg2, void *arg3) {
 			LOG_ERR("Error reading IMU data: %d", err);
 			k_thread_abort(imu_tid);
 		}
-		k_sleep(K_MSEC(IMU_SLEEP_MS));		
+
+		ekf_update(sensor_value_to_double(&accel_x_out) - accel_offset_x,
+			   sensor_value_to_double(&accel_y_out) - accel_offset_y,
+			   sensor_value_to_double(&accel_z_out) - accel_offset_z,
+			   sensor_value_to_double(&gyro_x_out) - gyro_offset_x,
+			   sensor_value_to_double(&gyro_y_out) - gyro_offset_y,
+			   sensor_value_to_double(&gyro_z_out) - gyro_offset_z,
+			   IMU_SLEEP_MS/1000.0f, 
+			   Q_GYRO_PROCESS_NOISE, 
+			   R_ACCEL_MEASUREMENT_NOISE, 
+			   &ekf_calculated_results);
+
+		printk("Est. Roll: %.2f deg, Est. Pitch: %.2f deg\n\n", 
+		        ekf_calculated_results.roll, 
+		        ekf_calculated_results.pitch);
+
+		k_sleep(K_MSEC(IMU_SLEEP_MS));	
 	}
 }
