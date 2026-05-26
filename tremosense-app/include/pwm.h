@@ -14,9 +14,11 @@ extern float target_servo_roll_deg, target_servo_pitch_deg;
 
 #define PWM_TASK_STACK_SIZE_BYTES 1024
 
-#define PWM_SLEEP_MS 1000 
+#define PWM_SLEEP_MS 10 
 
 extern k_tid_t pwm_tid;
+
+int servos_reset(void);
 
 int set_servo_angle(const struct pwm_dt_spec *pwm_dev_roll, 
                    const struct pwm_dt_spec *pwm_dev_pitch,

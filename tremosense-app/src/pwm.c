@@ -37,6 +37,22 @@ int set_servo_angle(const struct pwm_dt_spec *pwm_dev_roll,
     	return 0;
 }
 
+int servos_reset(void)
+{
+	uint32_t angle_roll = 90, angle_pitch = 90;
+	uint32_t pulse_roll, pulse_pitch, err;
+
+	pulse_roll = ROLL_SERVO_MIN + ((ROLL_SERVO_PERIOD * angle_roll) / 180);
+	if ((err = pwm_set_pulse_dt(&roll, pulse_roll)) < 0)
+		return err;
+	
+	pulse_pitch = PITCH_SERVO_MIN + ((PITCH_SERVO_PERIOD * angle_pitch) / 180);
+	if ((err = pwm_set_pulse_dt(&pitch, pulse_pitch)) < 0)
+		return err;
+
+    	return 0;
+}
+
 int servo_sweep(const struct pwm_dt_spec *pwm_dev)
 {
 	uint32_t pulse = 0, ret = 0;
