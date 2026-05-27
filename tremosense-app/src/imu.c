@@ -1,6 +1,7 @@
 #include "imu.h"
 #include "pwm.h"
 #include "ekf.h"
+#include "lqr.h"
 
 #include <stdio.h>
 #include <zephyr/sys/util.h>
@@ -126,9 +127,9 @@ int imu_init(const struct device *imu_dev)
 		return err;
 	}
 
-	/* 2g accel measurment range FS */
-        acc_full_scale.val1 = 19;
-        acc_full_scale.val2 = 613300;
+	/* 16g accel measurment range FS */
+        acc_full_scale.val1 = 156;
+        acc_full_scale.val2 = 906400;
         
         if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_ACCEL_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &acc_full_scale)) < 0) {
@@ -136,9 +137,9 @@ int imu_init(const struct device *imu_dev)
 		return err;
 	}
 
-	/* 125 dps gyro measurment range FS */
-        gyro_full_scale.val1 = 2;
-        gyro_full_scale.val2 = 181659;
+	/* 2000 dps gyro measurment range FS */
+        gyro_full_scale.val1 = 34;
+        gyro_full_scale.val2 = 906585;
         
         if ((err = sensor_attr_set(imu_dev, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &gyro_full_scale)) < 0) {
@@ -165,7 +166,9 @@ int imu_init(const struct device *imu_dev)
 
 int imu_readings(void)
 {
-	printk("\033[2J\033[H");
+	#if CONFIG_CLEAR_SCREEN
+		printk("\033[2J\033[H");
+	#endif
 
 	/* lsm6ds3_trc accel */
 	snprintf(out_str, sizeof(out_str), "accel x:%f m/s2 y:%f m/s2 z:%f m/s2",
@@ -210,6 +213,19 @@ void imu_thread_function(void *arg1, void *arg2, void *arg3) {
 		printk("Est. Roll: %.2f deg, Est. Pitch: %.2f deg\n\n", 
 		        ekf_calculated_results.roll, 
 		        ekf_calculated_results.pitch);
+
+		lqr_update(ekf_calculated_results.roll, 
+			   ekf_calculated_results.pitch,
+		 	   sensor_value_to_double(&gyro_x_out), 
+			   sensor_value_to_double(&gyro_y_out), 
+			   gyro_offset_x, 
+		    	   gyro_offset_y, 
+			   &target_servo_roll_deg,
+			   &target_servo_pitch_deg);
+		
+		printk("Servo Calc. Roll: %.2f deg, Pitch: %.2f deg\n\n", 
+		        target_servo_roll_deg, 
+		        target_servo_pitch_deg);
 
 		k_sleep(K_MSEC(IMU_SLEEP_MS));	
 	}

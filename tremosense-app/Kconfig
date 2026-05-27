@@ -15,3 +15,10 @@ config PWM_TEST_RB_LED
                 If enabled, the RB LED will be used for testing PWM feature. 
                 Green LED indicates Roll Servo motor and Red LED indicates Pitch 
                 Servo motor.
+
+config CLEAR_SCREEN
+        bool "Clear screen before printing next values"
+        default n
+        help
+                If enabled, the console screen will be cleared before printing 
+                upcoming IMU, EKK and servo values.

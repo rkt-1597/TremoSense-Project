@@ -8,6 +8,8 @@
 extern const struct pwm_dt_spec roll;
 extern const struct pwm_dt_spec pitch;
 
+extern float target_servo_roll_deg, target_servo_pitch_deg;
+
 #define PWM_TASK_STACK_SIZE_BYTES 1024
 
 #define PWM_SLEEP_MS 1000 
