@@ -1,6 +1,8 @@
 #ifndef PWM_H
 #define PWM_H
 
+#include "lqr.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/logging/log.h>

@@ -18,8 +18,8 @@ const struct pwm_dt_spec imu_calib_led = PWM_DT_SPEC_GET(DT_ALIAS(imu_calib));
 
 struct sensor_value accel_x_out, accel_y_out, accel_z_out;
 struct sensor_value gyro_x_out, gyro_y_out, gyro_z_out;
-double accel_offset_x = 0, accel_offset_y = 0, accel_offset_z = 0;
-double gyro_offset_x = 0, gyro_offset_y = 0, gyro_offset_z = 0;
+float accel_offset_x = 0, accel_offset_y = 0, accel_offset_z = 0;
+float gyro_offset_x = 0, gyro_offset_y = 0, gyro_offset_z = 0;
 
 void lsm6ds3_trc_trigger_handler(const struct device *dev,
 				    const struct sensor_trigger *trig)
@@ -53,26 +53,26 @@ void lsm6ds3_trc_trigger_handler(const struct device *dev,
 void calibrate_imu(void)
 {
         int samples = 300;
-        double sum_ax = 0, sum_ay = 0, sum_az = 0;
-        double sum_gx = 0, sum_gy = 0, sum_gz = 0;
+        float sum_ax = 0, sum_ay = 0, sum_az = 0;
+        float sum_gx = 0, sum_gy = 0, sum_gz = 0;
 
-        printk("Please place the board flat on a table and DO NOT TOUCH IT.\n");
+        LOG_INF("Please place the board flat on a table and DO NOT TOUCH IT.\n");
 
 	uint32_t pulse = IMU_CALIB_LED_MAX;
 	pwm_set_pulse_dt(&imu_calib_led, pulse);
 
         k_msleep(3000);
-        printk("\n--- STARTING CALIBRATION ---\n");
+        LOG_INF("\n--- STARTING CALIBRATION ---\n");
 
         for (int i = 0; i < samples; i++) {
 		print_samples = 1;
-                sum_ax += sensor_value_to_double(&accel_x_out);
-                sum_ay += sensor_value_to_double(&accel_y_out);
-                sum_az += sensor_value_to_double(&accel_z_out);
+                sum_ax += sensor_value_to_float(&accel_x_out);
+                sum_ay += sensor_value_to_float(&accel_y_out);
+                sum_az += sensor_value_to_float(&accel_z_out);
 
-                sum_gx += sensor_value_to_double(&gyro_x_out);
-                sum_gy += sensor_value_to_double(&gyro_y_out);
-                sum_gz += sensor_value_to_double(&gyro_z_out);
+                sum_gx += sensor_value_to_float(&gyro_x_out);
+                sum_gy += sensor_value_to_float(&gyro_y_out);
+                sum_gz += sensor_value_to_float(&gyro_z_out);
 
                 k_msleep(10); 
         }
@@ -83,11 +83,11 @@ void calibrate_imu(void)
 
         accel_offset_x = sum_ax / samples;
         accel_offset_y = sum_ay / samples;
-        accel_offset_z = (sum_az / samples) - 9.80665; 
+        accel_offset_z = (sum_az / samples) - 9.80665f; 
 
-        printk("Calibration Complete! (5s pause for user to check offset)\n");
-        printk("Accel Offsets: X: %.3f, Y: %.3f, Z: %.3f\n", accel_offset_x, accel_offset_y, accel_offset_z);
-        printk("Gyro Offsets:  X: %.3f, Y: %.3f, Z: %.3f\n\n", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+        LOG_INF("Calibration Complete! (5 seconds pause for user to check offset)\n");
+        LOG_INF("Accel Offsets: X: %.3f, Y: %.3f, Z: %.3f\n", (double)accel_offset_x, (double)accel_offset_y, (double)accel_offset_z);
+        LOG_INF("Gyro Offsets:  X: %.3f, Y: %.3f, Z: %.3f\n\n", (double)gyro_offset_x, (double)gyro_offset_y, (double)gyro_offset_z);
         
 	uint32_t wait_start = k_uptime_get_32();
         while ((k_uptime_get_32() - wait_start) < 5000) {
@@ -174,17 +174,17 @@ int imu_readings(void)
 
 	/* lsm6ds3_trc accel */
 	snprintf(out_str, sizeof(out_str), "accel x:%f m/s2 y:%f m/s2 z:%f m/s2",
-							sensor_value_to_double(&accel_x_out) - accel_offset_x,
-							sensor_value_to_double(&accel_y_out) - accel_offset_y,
-							sensor_value_to_double(&accel_z_out) - accel_offset_z);
-	printk("%s\n", out_str);
+							(double)(sensor_value_to_float(&accel_x_out) - accel_offset_x),
+							(double)(sensor_value_to_float(&accel_y_out) - accel_offset_y),
+							(double)(sensor_value_to_float(&accel_z_out) - accel_offset_z));
+	LOG_INF("%s\n", out_str);
 
 	/* lsm6ds3_trc gyro */
 	snprintf(out_str, sizeof(out_str), "gyro  x:%f dps  y:%f dps  z:%f dps ",
-							(sensor_value_to_double(&gyro_x_out)* RAD_TO_DEG) - gyro_offset_x* RAD_TO_DEG,
-							(sensor_value_to_double(&gyro_y_out)* RAD_TO_DEG) - gyro_offset_y* RAD_TO_DEG,
-							(sensor_value_to_double(&gyro_z_out)* RAD_TO_DEG) - gyro_offset_z* RAD_TO_DEG);
-	printk("%s\n", out_str);
+							(double)((sensor_value_to_float(&gyro_x_out)* RAD_TO_DEG) - gyro_offset_x* RAD_TO_DEG),
+							(double)((sensor_value_to_float(&gyro_y_out)* RAD_TO_DEG) - gyro_offset_y* RAD_TO_DEG),
+							(double)((sensor_value_to_float(&gyro_z_out)* RAD_TO_DEG) - gyro_offset_z* RAD_TO_DEG));
+	LOG_INF("%s\n", out_str);
 
 	LOG_INF("loop:%d trig_cnt:%d\n\n", ++cnt, lsm6ds3_trc_trig_cnt);
 
@@ -208,33 +208,27 @@ void imu_thread_function(const struct device *dev, void *arg2, void *arg3) {
 			uint32_t current_time = k_uptime_get_32();
 			float actual_dt_seconds = (float)(current_time - last_time) / 1000.0f;
 			last_time = current_time;
-			ekf_update(sensor_value_to_double(&accel_x_out) - accel_offset_x,
-				sensor_value_to_double(&accel_y_out) - accel_offset_y,
-				sensor_value_to_double(&accel_z_out) - accel_offset_z,
-				sensor_value_to_double(&gyro_x_out) - gyro_offset_x,
-				sensor_value_to_double(&gyro_y_out) - gyro_offset_y,
-				sensor_value_to_double(&gyro_z_out) - gyro_offset_z,
-				actual_dt_seconds, 
-				Q_GYRO_PROCESS_NOISE, 
-				R_ACCEL_MEASUREMENT_NOISE, 
-				&ekf_calculated_results);
+			ekf_update(sensor_value_to_float(&accel_x_out) - accel_offset_x,
+				   sensor_value_to_float(&accel_y_out) - accel_offset_y,
+				   sensor_value_to_float(&accel_z_out) - accel_offset_z,
+				   sensor_value_to_float(&gyro_x_out) - gyro_offset_x,
+				   sensor_value_to_float(&gyro_y_out) - gyro_offset_y,
+				   sensor_value_to_float(&gyro_z_out) - gyro_offset_z,
+				   actual_dt_seconds, 
+				   Q_GYRO_PROCESS_NOISE, 
+				   R_ACCEL_MEASUREMENT_NOISE, 
+				   &ekf_calculated_results);
 
 			printk("Est. Roll: %.2f deg | Est. Pitch: %.2f deg\n\n",
-				ekf_calculated_results.roll, 
-				ekf_calculated_results.pitch);
+			       (double)ekf_calculated_results.roll, 
+			       (double)ekf_calculated_results.pitch);
 
 			lqr_update(ekf_calculated_results.roll, 
-				ekf_calculated_results.pitch,
-				sensor_value_to_double(&gyro_x_out), 
-				sensor_value_to_double(&gyro_y_out), 
-				gyro_offset_x, 
-				gyro_offset_y);
-
-			k_msgq_peek(&lqr_res, &obtained_lqr_values);
-			
-			printk("Servo Calc. Roll: %.2f deg | Pitch: %.2f deg\n\n",
-				obtained_lqr_values.roll_to_servo, 
-				obtained_lqr_values.pitch_to_servo);
+				   ekf_calculated_results.pitch,
+				   sensor_value_to_float(&gyro_x_out), 
+				   sensor_value_to_float(&gyro_y_out), 
+				   gyro_offset_x, 
+				   gyro_offset_y);
 		}
 	}
 }
