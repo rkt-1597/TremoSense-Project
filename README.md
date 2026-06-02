@@ -1,8 +1,8 @@
 <div align="center">
 
-# <span style="font-size:5rem; font-weight:900; letter-spacing:0.5px;">TremoSense</span>
+# TremoSense
 
-### Adaptive Tremor Suppression and Motion Stabilization Platform
+## Zephyr RTOS Based Tremor Suppression and Motion Stabilization Platform
 
 <table>
 <tr>
@@ -11,7 +11,7 @@
 </td>
 <td width="1%"></td>
 <td width="57%" align="center">
-  <img src="assets/Tremosense.gif" width="100%" alt="TremoSense Demo"/>
+  <img src="assets/tremosense.gif" width="100%" alt="TremoSense Demo"/>
 </td>
 </tr>
 </table>
@@ -28,7 +28,9 @@
 
 ## ✨ Abstract
 
-Neurological disorders such as Parkinson’s disease and essential tremor can impair fine motor activities including eating and object manipulation. TremoSense is a low-cost embedded tremor compensation platform that uses inertial sensing, signal processing, EKF-LQR-based feedback control, and servo actuation to reduce tremor-induced motion in real time. The system is also designed to support future tremor analytics through patient motion recording and computational assessment of tremor characteristics.
+TremoSense is a real-time embedded motion stabilization platform built on **Zephyr RTOS** and the **Seeed XIAO nRF52840 Sense**. The system combines inertial sensing, **Extended Kalman Filter (EKF) state estimation, Linear Quadratic Regulator (LQR)** control, and servo actuation to suppress tremor-induced motion. This project aims to assist individuals affected by neurological disorders such as Parkinson's Disease, in which patient generally suffers from tremors in the range of **3 to 7 Hz**.  
+
+An Extended Kalman Filter (EKF) performs motion estimation and noise reduction, while a Linear Quadratic Regulator (LQR)-based controller computes optimal compensatory control signals in real time. These control inputs drive a **two-axis servo-actuated gimbal mechanism** that generates counter-directional motion to attenuate tremor-induced displacement and improve spoon stability during assistive feeding operations, in the Roll & Pitch directions. The control algorithm for this project executes at **1000 Hz** on the nRF52840 using Zephyr RTOS.
 
 ---
 
@@ -42,20 +44,11 @@ Neurological disorders such as Parkinson’s disease and essential tremor can im
 
 ---
 
-## ⚙️ Operating Principle
-
-The TremoSense platform integrates inertial sensing, signal processing, state estimation, and servo-based actuation into a robust tremor compensation system. The onboard IMU continuously acquires multi-axis hand motion data, which is digitally filtered to isolate pathological tremor-frequency components, typically within the 3–8 Hz range. An Extended Kalman Filter (EKF) performs motion estimation and noise reduction, while a Linear Quadratic Regulator (LQR)-based controller computes optimal compensatory control signals in real time.
-
-These control inputs drive a two-axis servo-actuated gimbal mechanism that generates counter-directional motion to attenuate tremor-induced displacement and improve spoon stability during assistive feeding operations.
-
----
-
 ## 🧰 Hardware Configuration
 
 * **Seeed XIAO nRF52840 Sense** for embedded processing and onboard IMU sensing
-* **Servo motors** for two-axis stabilization control
-* **Rechargeable battery subsystem** for portable operation
-* **Lightweight mechanical spoon mounting assembly**
+* **MG995 Servo** for roll-axis stabilization
+* **FS90MG Servo** for pitch-axis stabilization
 
 ---
 
@@ -64,19 +57,17 @@ These control inputs drive a two-axis servo-actuated gimbal mechanism that gener
 * **Zephyr RTOS** for embedded firmware architecture and hardware abstraction
 * **MATLAB & Simulink** for control-system modeling, simulation, and analytical validation
 
-### Required Libraries and Installation
+## Required Libraries and Installation
 
-#### Operating System Support
+### Operating System Support
 
 The project development environment has been configured and tested to build on:
 
 * **Ubuntu 22.04 LTS**
 
-#### Zephyr RTOS Installation and Setup
+### Zephyr RTOS Installation and Setup
 
 The following setup procedure installs the Zephyr RTOS workspace, SDK, ARM toolchain, Python dependencies, and development utilities required for building and flashing the TremoSense firmware.
-
-##### Linux Installation (Ubuntu 22.04+)
 
 **1. Install Zephyr RTOS**
 
@@ -99,8 +90,8 @@ installs all toolchains.
 
 ```bash
 cd ~/zephyrproject
-git clone https://github.com/rkt-1597/Tremosense
-cd Tremosense/tremosense-app
+git clone https://github.com/rkt-1597/TremoSense-Project
+cd TremoSense-Project/tremosense-app
 ```
 
 **4. Build the Tremosense Application**
@@ -113,7 +104,7 @@ west build -b xiao_ble/nrf52840/sense -p always -- -DDTC_OVERLAY_FILE=boards/xia
 
 Now, double-click on the XIAO BLE Sense board and copy the file `zephyr.uf2` to XIAO-SENSE directory; board will reset immediately and start running the application. <username> is your Linux username, which can be found uinsg `whoami` command.
 ```bash
-cp -r ~/zephyrproject/Tremosense/tremosense-app/build/zephyr/zephyr.uf2 /media/<username>/XIAO-SENSE
+cp -r ~/zephyrproject/TremoSense-Project/tremosense-app/build/zephyr/zephyr.uf2 /media/<username>/XIAO-SENSE
 ```
 **Note:**
 Just after flashing, make sure to hold the board horizontally levelled since it immediately starts calibration processs for the IMU. It will switch on onboard blue LED for 3 seconds before beginning calibration and after calibration, it will 
@@ -121,54 +112,43 @@ blink the blue LED for 5 seconds; the obtained offsets will be available on cons
 
 ---
 
-## 🚀 Future Scope and Research Directions
+## 🚀 Future Scope
 
-* Adaptive control strategies for improved real-time tremor compensation
-* Longitudinal tremor recording and patient-specific motion analytics
-* Machine learning-based tremor characterization and severity estimation
-* Automated clinician-oriented tremor analysis and reporting
-* Ergonomically optimized lightweight enclosure for daily usability
-
+* Integration of servo dynamics and actuator non-linearities into the control model
+* Adaptive or gain-scheduled control for improved tremor suppression across varying user conditions
+* Quantitative hardware benchmarking using IMU-based performance metrics
+* Prototype miniaturized and ergonomically optimized mechanical design for daily use
+* Design of a robust and power efficient battery and power management system for making the prototype portable
+* Closed-loop evaluation on varied multi-axis stabilization platforms
 ---
 
 ## MATLAB & Simulink Modelling Results
 
-* **Unit Step Response Statistics**
+* ### **Roll Axis Frequency Analysis**
 
-![Unit Step Response Statistics](MATLAB_Simulink/assets/unit_step_response_stats.png)
+![Roll Frequency Analysis](MATLAB_Simulink/assets/roll_freq_analysis.png)
 
-*Both Roll & Pitch Axes demonstrate a minimal ~6% overshoot for an unit step response*
+*Frequency-response analysis of the roll stabilization axis under tremor amplitudes ranging from 2° to 7° indicates that the controller maintains approximately 90% tremor suppression across most of the clinically relevant tremor band (3–7 Hz). For this test, the model was provided a Roll tremor signal with variable frequency sweep and amplitude (representing Roll angle) varying from 2 to 7 with step size of 1 and Pitch and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
 
-* **Unit Step Response**
-![Unit Step Response Plots](MATLAB_Simulink/assets/unit_step_response.png)
-*The visual representation of the unit step response indicates the rapid reaction time and prolonged stablility*
+* ### **Pitch Axis Frequency Analysis**
+![Pitch Frequency Analysis](MATLAB_Simulink/assets/pitch_freq_analysis.png)
+*Frequency-response analysis of the pitch stabilization axis under tremor amplitudes ranging from 2° to 7° demonstrates stable tremor suppression across most of the clinically relevant tremor band (3–7 Hz) - about 80% tremor suppression. For this test, the model was provided a Pitch tremor signal with variable frequency sweep and amplitude (representing Pitch angle) varying from 2 to 7 with step size of 1 and Roll and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
 
-* **System Limits (Bode Plot)**
-![Bode Plot System Limits](MATLAB_Simulink/assets/Bode_plot_sys_limit.png)
-*Bode plots of directly copuled axes (Roll Motor - Roll Angle & Pitch Motor - Pitch Angle) illustrate the system's frequency limit, highlighting a global minimum at 16.94 Hz which is greater than typical high frequency Parkinson's disease tremors (~6-7 Hz) or Essential Tremor (upto 12 Hz)*
+* ### **EKF vs Input**
+![EKF vs Input](MATLAB_Simulink/assets/ekf_vs_ip.png)
+*Time-domain comparison between simulated 8 degree (across roll and pitch axis separately) and 8 Hz tremor input and EKF state estimate reveals the estimator accurately tracks tremor motion with minimal amplitude distortion and phase lag, providing reliable state information for closed-loop control.*
 
-* **Magnitude Bode Plots (Cross-Coupling)**
-![Magnitude Bode Plot](MATLAB_Simulink/assets/magn_bode_plot.png)
-*Magnitude Bode plots validate strong primary axis response and effectively zero cross-coupling interference between roll and pitch.*
 
-* **EKF vs Input**
-![EKF vs Input](MATLAB_Simulink/assets/EKF_vs_input.png)
-*Scope capture demonstrates the Extended Kalman Filter (EKF) accurately tracking the simulated input signals.*
-
-* **LQR vs EKF**
-![LQR vs EKF](MATLAB_Simulink/assets/LQR_vs_EKF.png)
-*Comparison shows the Linear Quadratic Regulator (LQR) successfully stabilizing the system based on the EKF state estimations.*
-
-* **LQR vs Input**
-![LQR vs Input](MATLAB_Simulink/assets/LQR_vs_input.png)
-*Performance plot shows the final LQR control effort actively counteracting the raw physical input to cancel out the tremor.*
+* ### **LQR vs Input**
+![LQR vs Input](MATLAB_Simulink/assets/lqr_vs_ip.png)
+*Time-domain response of the LQR controller shows the generated control action produces counter-motion that opposes the measured tremor, resulting in significant attenuation of residual motion in the stabilized output.*
 
 ## 👥 Project Contributors
 
 <div align="center">
 
 **Prithvi Tambewagh** · **Pawan Shinde** · **Pranshu Kumar**<br>
-Department of Electronics and Telecommunication Engineering<br>
+B.Tech. Electronics and Telecommunication Engineering<br>
 Veermata Jijabai Technological Institute (VJTI), Mumbai, India<br>
 
 </div>
