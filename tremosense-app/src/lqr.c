@@ -1,6 +1,18 @@
 #include "lqr.h"
 #include "pwm.h"
 
+/* LQR State Vector
+ *
+ * x_state[0] -> Roll angle            (phi)   [rad]
+ * x_state[1] -> Roll angular velocity (p)     [rad/s]
+ * x_state[2] -> Pitch angle           (theta) [rad]
+ * x_state[3] -> Pitch angular velocity(q)     [rad/s]
+ *
+ * Roll and pitch angles are obtained from the EKF.
+ * Roll and pitch rates are obtained directly from the gyroscope and used after 
+ * bias correction.
+ */
+
 lqr_result_t obtained_lqr_values;
 
 void lqr_update(float phi_deg, float theta_deg, 

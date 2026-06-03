@@ -2,7 +2,7 @@
 
 # TremoSense
 
-## Zephyr RTOS Based Tremor Suppression and Motion Stabilization Platform
+## Zephyr RTOS Based Tremor Suppression and Motion Stabilization Platform for Parkinson's Disease patients
 
 <table>
 <tr>
@@ -14,7 +14,7 @@
   <img src="assets/tremosense.gif" width="100%" alt="TremoSense Demo"/>
 </td>
 </tr>
-</table>
+</table>w
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Zephyr_RTOS-6DB33F?style=for-the-badge" />
@@ -28,9 +28,13 @@
 
 ## ✨ Abstract
 
-TremoSense is a real-time embedded motion stabilization platform built on **Zephyr RTOS** and the **Seeed XIAO nRF52840 Sense**. The system combines inertial sensing, **Extended Kalman Filter (EKF) state estimation, Linear Quadratic Regulator (LQR)** control, and servo actuation to suppress tremor-induced motion. This project aims to assist individuals affected by neurological disorders such as Parkinson's Disease, in which patient generally suffers from tremors in the range of **3 to 7 Hz**.  
+TremoSense is a real-time embedded motion stabilization platform built on **Zephyr RTOS** and the **Seeed XIAO nRF52840 Sense**. The system combines inertial sensing, **Extended Kalman Filter (EKF) state estimation, Linear Quadratic Regulator (LQR)** control, and servo actuation to suppress tremor-induced motion. Parkinson's Disease patients generally suffer from tremors in the range of **3 to 7 Hz**, due to which they face problems in daily like tasks, like **holding a spoon**, which we aim to solve by means of this project.  
 
-An Extended Kalman Filter (EKF) performs motion estimation and noise reduction, while a Linear Quadratic Regulator (LQR)-based controller computes optimal compensatory control signals in real time. These control inputs drive a **two-axis servo-actuated gimbal mechanism** that generates counter-directional motion to attenuate tremor-induced displacement and improve spoon stability during assistive feeding operations, in the Roll & Pitch directions. The control algorithm for this project executes at **1000 Hz** on the nRF52840 using Zephyr RTOS.
+The project operates in 2 stages:
+1. An **Extended Kalman Filter (EKF)** performs motion estimation and noise reduction and determines the spoon's present orientation (specifically roll and pitch angles) and provides them to the LQR.
+2. A **Linear Quadratic Regulator (LQR)-based controller** computes optimal compensatory control signals in real time. These control inputs drive a **two-axis servo-actuated gimbal mechanism** that generates counter-directional motion to attenuate tremor-induced displacement and improve spoon stability during assistive feeding operations, in the Roll & Pitch directions. 
+
+The EKF-LQR control architecture was validated at 1000 Hz in MATLAB/Simulink and deployed on the nRF52840 using Zephyr RTOS.
 
 ---
 
@@ -57,6 +61,14 @@ An Extended Kalman Filter (EKF) performs motion estimation and noise reduction, 
 * **Zephyr RTOS** for embedded firmware architecture and hardware abstraction
 * **MATLAB & Simulink** for control-system modeling, simulation, and analytical validation
 
+
+### Firmware Architecture
+
+* **Multi-threaded Zephyr RTOS** application architecture
+* Inter-thread communication using **Zephyr message queues**
+* Synchronization using **Zephyr semaphores**
+* Real-time sensor acquisition, estimation, control, and actuation tasks
+
 ## Required Libraries and Installation
 
 ### Operating System Support
@@ -76,9 +88,9 @@ Follow the instructions [here](https://docs.zephyrproject.org/latest/develop/get
 **2. Installing the Zephyr SDK**
 
 Currently this project uses XIAO BLE Sense board which has nRF52840 SoC onboard it which requires GNU ARM toolchain. To optimize the installation of Zephyr SDK
-and reduce disk usage we can install the GNU ARM toolchain specifically, uing:
+and reduce disk usage we can install the GNU ARM toolchain specifically, using:
 ```bash
-west sdk install -t zephyr-arm-eabi
+west sdk install -t arm-zephyr-eabi
 ```
 Otherwise,
 ```bash
@@ -124,15 +136,17 @@ blink the blue LED for 5 seconds; the obtained offsets will be available on cons
 
 ## MATLAB & Simulink Modelling Results
 
+The following tests have been done considering mass of food to be 50 grams, and using FS90MG for Pitch axis control & MG995 for Roll axis control
+
 * ### **Roll Axis Frequency Analysis**
 
 ![Roll Frequency Analysis](MATLAB_Simulink/assets/roll_freq_analysis.png)
 
-*Frequency-response analysis of the roll stabilization axis under tremor amplitudes ranging from 2° to 7° indicates that the controller maintains approximately 90% tremor suppression across most of the clinically relevant tremor band (3–7 Hz). For this test, the model was provided a Roll tremor signal with variable frequency sweep and amplitude (representing Roll angle) varying from 2 to 7 with step size of 1 and Pitch and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
+*Frequency-response analysis of the roll stabilization axis under tremor amplitudes ranging from 2° to 7° indicates that the controller maintains >90% tremor suppression across most of the clinically relevant tremor band (3–7 Hz). For this test, the model was provided a Roll tremor signal with variable frequency sweep and amplitude (representing Roll angle) varying from 2 to 7 with step size of 1 and Pitch and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
 
 * ### **Pitch Axis Frequency Analysis**
 ![Pitch Frequency Analysis](MATLAB_Simulink/assets/pitch_freq_analysis.png)
-*Frequency-response analysis of the pitch stabilization axis under tremor amplitudes ranging from 2° to 7° demonstrates stable tremor suppression across most of the clinically relevant tremor band (3–7 Hz) - about 80% tremor suppression. For this test, the model was provided a Pitch tremor signal with variable frequency sweep and amplitude (representing Pitch angle) varying from 2 to 7 with step size of 1 and Roll and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
+*Frequency-response analysis of the pitch stabilization axis under tremor amplitudes ranging from 2° to 7° demonstrates stable tremor suppression across most of the clinically relevant tremor band (3–7 Hz) - >80% tremor suppression. For this test, the model was provided a Pitch tremor signal with variable frequency sweep and amplitude (representing Pitch angle) varying from 2 to 7 with step size of 1 and Roll and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Pitch axis taking into account cross-coupling among the axes.*
 
 * ### **EKF vs Input**
 ![EKF vs Input](MATLAB_Simulink/assets/ekf_vs_ip.png)
@@ -141,7 +155,15 @@ blink the blue LED for 5 seconds; the obtained offsets will be available on cons
 
 * ### **LQR vs Input**
 ![LQR vs Input](MATLAB_Simulink/assets/lqr_vs_ip.png)
-*Time-domain response of the LQR controller shows the generated control action produces counter-motion that opposes the measured tremor, resulting in significant attenuation of residual motion in the stabilized output.*
+*Time-domain response of the LQR controller shows the generated control action produces counter-motion that opposes the measured tremor, resulting in significant attenuation of residual motion in the stabilized output. The residual tremor RMS was 0.346° for the roll axis and 0.573° for the pitch axis under an 8° amplitude, 8 Hz tremor input across all 3 axes - Roll, Pitch & Yaw*
+
+## Tuning the project for specific use case
+
+The project has several tunable parameters which can be tuned to best suit the hardware used (e.g. different servo motors used, spoon of different length used, etc.) and to best tailor the project for specific application, tune the following parameters before building the `tremosense-app/` application:
+
+* Tune the EKF by adjusting Q_EKF (process noise covariance) and R_EKF (measurement noise covariance) according to sensor characteristics and application requirements, by setting values of `Q_EKF` & `R_EKF` in the model simulation (refer EKF block in [`MATLAB_Simulink/TremoSense_Model.pdf`](MATLAB_Simulink/TremoSense_Model.pdf))
+* Set the physical system parameters and controller weights in  [`MATLAB_Simulink/LQR_ARE.m`](MATLAB_Simulink/LQR_ARE.m) and run the script to obtain the `K_lqr` matrix
+* Set the constants in [`tremosense-app/include/constants.h`](tremosense-app/include/constants.h) and `K_lqr` matrix obtained from previous step
 
 ## 👥 Project Contributors
 

@@ -1,5 +1,14 @@
 #include "ekf.h"
 
+/* EKF State Vector
+ *
+ * x[0] -> Roll angle  (phi)   [rad]
+ * x[1] -> Pitch angle (theta) [rad]
+ *
+ * The EKF estimates drift-free roll and pitch angles by
+ * fusing gyroscope angular rates with accelerometer measurements.
+ */
+
 static float x[2];      
 static float P[2][2];  
 
