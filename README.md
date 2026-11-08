@@ -14,7 +14,7 @@
   <img src="assets/tremosense.gif" width="100%" alt="TremoSense Demo"/>
 </td>
 </tr>
-</table>w
+</table>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Zephyr_RTOS-6DB33F?style=for-the-badge" />
@@ -26,6 +26,10 @@
 
 ---
 
+> **Status: research prototype, not a medical device.** No regulatory approval, certification or clinical validation is claimed. Standards such as ISO 14971 and IEC 62304 are used only as engineering references (see [`documentation/`](documentation/)). All performance figures below come from MATLAB/Simulink simulation, not from hardware measurements.
+
+---
+
 ## ✨ Abstract
 
 TremoSense is a real-time embedded motion stabilization platform built on **Zephyr RTOS** and the **Seeed XIAO nRF52840 Sense**. The system combines inertial sensing, **Extended Kalman Filter (EKF) state estimation, Linear Quadratic Regulator (LQR)** control, and servo actuation to suppress tremor-induced motion. Parkinson's Disease patients generally suffer from tremors in the range of **3 to 7 Hz**, due to which they face problems in daily like tasks, like **holding a spoon**, which we aim to solve by means of this project.  
@@ -34,7 +38,7 @@ The project operates in 2 stages:
 1. An **Extended Kalman Filter (EKF)** performs motion estimation and noise reduction and determines the spoon's present orientation (specifically roll and pitch angles) and provides them to the LQR.
 2. A **Linear Quadratic Regulator (LQR)-based controller** computes optimal compensatory control signals in real time. These control inputs drive a **two-axis servo-actuated gimbal mechanism** that generates counter-directional motion to attenuate tremor-induced displacement and improve spoon stability during assistive feeding operations, in the Roll & Pitch directions. 
 
-The EKF-LQR control architecture was validated at 1000 Hz in MATLAB/Simulink and deployed on the nRF52840 using Zephyr RTOS.
+The EKF-LQR control architecture was simulated at 1000 Hz in MATLAB/Simulink and deployed on the nRF52840 using Zephyr RTOS. The firmware samples the IMU at 208 Hz.
 
 ---
 
@@ -103,7 +107,7 @@ installs all toolchains.
 ```bash
 cd ~/zephyrproject
 git clone https://github.com/rkt-1597/TremoSense-Project
-cd TremoSense-Project/tremosense-app
+cd TremoSense-Project/firmware
 ```
 
 **4. Build the Tremosense Application**
@@ -116,11 +120,11 @@ west build -b xiao_ble/nrf52840/sense -p always -- -DDTC_OVERLAY_FILE=boards/xia
 
 Now, double-click on the XIAO BLE Sense board and copy the file `zephyr.uf2` to XIAO-SENSE directory; board will reset immediately and start running the application. <username> is your Linux username, which can be found uinsg `whoami` command.
 ```bash
-cp -r ~/zephyrproject/TremoSense-Project/tremosense-app/build/zephyr/zephyr.uf2 /media/<username>/XIAO-SENSE
+cp -r ~/zephyrproject/TremoSense-Project/firmware/build/zephyr/zephyr.uf2 /media/<username>/XIAO-SENSE
 ```
 **Note:**
 Just after flashing, make sure to hold the board horizontally levelled since it immediately starts calibration processs for the IMU. It will switch on onboard blue LED for 3 seconds before beginning calibration and after calibration, it will 
-blink the blue LED for 5 seconds; the obtained offsets will be available on console during this time. Immdiately after this the servos will be activated for tremor cancellation.
+blink the blue LED for 5 seconds; the obtained offsets will be available on console during this time. Immediately after this the servos are activated for tremor cancellation, **provided** the tuning constants in `constants.h` are valid and calibration succeeded; otherwise the servos are held at neutral (90°) and the reason is logged on the console (there is no dedicated fault indicator yet) (see [`documentation/risk-management/SAFETY_ARCHITECTURE.md`](documentation/risk-management/SAFETY_ARCHITECTURE.md)).
 
 ---
 
@@ -140,30 +144,48 @@ The following tests have been done considering mass of food to be 50 grams, and 
 
 * ### **Roll Axis Frequency Analysis**
 
-![Roll Frequency Analysis](MATLAB_Simulink/assets/roll_freq_analysis.png)
+![Roll Frequency Analysis](algorithms/matlab/assets/roll_freq_analysis.png)
 
-*Frequency-response analysis of the roll stabilization axis under tremor amplitudes ranging from 2° to 7° indicates that the controller maintains >90% tremor suppression across most of the clinically relevant tremor band (3–7 Hz). For this test, the model was provided a Roll tremor signal with variable frequency sweep and amplitude (representing Roll angle) varying from 2 to 7 with step size of 1 and Pitch and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
+*(Simulink simulation result, not a hardware measurement.) Frequency-response analysis of the roll stabilization axis under tremor amplitudes ranging from 2° to 7° indicates that the controller maintains >90% tremor suppression across most of the clinically relevant tremor band (3–7 Hz). For this test, the model was provided a Roll tremor signal with variable frequency sweep and amplitude (representing Roll angle) varying from 2 to 7 with step size of 1 and Pitch and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Roll axis taking into account cross-coupling among the axes.*
 
 * ### **Pitch Axis Frequency Analysis**
-![Pitch Frequency Analysis](MATLAB_Simulink/assets/pitch_freq_analysis.png)
-*Frequency-response analysis of the pitch stabilization axis under tremor amplitudes ranging from 2° to 7° demonstrates stable tremor suppression across most of the clinically relevant tremor band (3–7 Hz) - >80% tremor suppression. For this test, the model was provided a Pitch tremor signal with variable frequency sweep and amplitude (representing Pitch angle) varying from 2 to 7 with step size of 1 and Roll and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Pitch axis taking into account cross-coupling among the axes.*
+![Pitch Frequency Analysis](algorithms/matlab/assets/pitch_freq_analysis.png)
+*(Simulink simulation result, not a hardware measurement.) Frequency-response analysis of the pitch stabilization axis under tremor amplitudes ranging from 2° to 7° demonstrates stable tremor suppression across most of the clinically relevant tremor band (3–7 Hz) - >80% tremor suppression. For this test, the model was provided a Pitch tremor signal with variable frequency sweep and amplitude (representing Pitch angle) varying from 2 to 7 with step size of 1 and Roll and Yaw tremor signals being sine waves of amplitude 8 (i.e. 8° of anglular displacement along that axis) & frequency of 8 Hz; this helps to obtain the frequency analysis of Pitch axis taking into account cross-coupling among the axes.*
 
 * ### **EKF vs Input**
-![EKF vs Input](MATLAB_Simulink/assets/ekf_vs_ip.png)
+![EKF vs Input](algorithms/matlab/assets/ekf_vs_ip.png)
 *Time-domain comparison between simulated 8 degree (across roll and pitch axis separately) and 8 Hz tremor input and EKF state estimate reveals the estimator accurately tracks tremor motion with minimal amplitude distortion and phase lag, providing reliable state information for closed-loop control.*
 
 
 * ### **LQR vs Input**
-![LQR vs Input](MATLAB_Simulink/assets/lqr_vs_ip.png)
+![LQR vs Input](algorithms/matlab/assets/lqr_vs_ip.png)
 *Time-domain response of the LQR controller shows the generated control action produces counter-motion that opposes the measured tremor, resulting in significant attenuation of residual motion in the stabilized output. The residual tremor RMS was 0.346° for the roll axis and 0.573° for the pitch axis under an 8° amplitude, 8 Hz tremor input across all 3 axes - Roll, Pitch & Yaw*
+
+## Repository layout
+
+| Path | Contents |
+|---|---|
+| `firmware/` | Zephyr application (`src/{sensors,estimation,control,actuation,safety,application,common}`), board files, host tests in `firmware/tests/` |
+| `algorithms/matlab/` | EKF/LQR MATLAB scripts and the Simulink model PDF |
+| `analysis/` | Reproducible simulation scripts and stored results/evidence logs |
+| `documentation/` | Architecture, audit, requirements, risk management, V&V plan and reports, calibration |
+| `research/` | Paper, figures, references |
+
+## Host-side tests (no hardware needed)
+
+```bash
+cmake -S firmware/tests -B build-host -G Ninja && cmake --build build-host && ctest --test-dir build-host --output-on-failure
+```
+
+These test the portable C core (EKF, LQR, safety monitor/guard, calibration, timing) including a regression check against the original EKF. They do **not** test Zephyr drivers, timing on the MCU, servos, or any hardware behaviour; see [`documentation/verification-validation/VV_PLAN.md`](documentation/verification-validation/VV_PLAN.md) for what remains unverified.
 
 ## Tuning the project for specific use case
 
-The project has several tunable parameters which can be tuned to best suit the hardware used (e.g. different servo motors used, spoon of different length used, etc.) and to best tailor the project for specific application, tune the following parameters before building the `tremosense-app/` application:
+The project has several tunable parameters which can be tuned to best suit the hardware used (e.g. different servo motors used, spoon of different length used, etc.) and to best tailor the project for specific application, tune the following parameters before building the `firmware/` application:
 
-* Tune the EKF by adjusting Q_EKF (process noise covariance) and R_EKF (measurement noise covariance) according to sensor characteristics and application requirements, by setting values of `Q_EKF` & `R_EKF` in the model simulation (refer EKF block in [`MATLAB_Simulink/TremoSense_Model.pdf`](MATLAB_Simulink/TremoSense_Model.pdf))
-* Set the physical system parameters and controller weights in  [`MATLAB_Simulink/LQR_ARE.m`](MATLAB_Simulink/LQR_ARE.m) and run the script to obtain the `K_lqr` matrix
-* Set the constants in [`tremosense-app/include/constants.h`](tremosense-app/include/constants.h) and `K_lqr` matrix obtained from previous step
+* Tune the EKF by adjusting Q_EKF (process noise covariance) and R_EKF (measurement noise covariance) according to sensor characteristics and application requirements, by setting values of `Q_EKF` & `R_EKF` in the model simulation (refer EKF block in [`algorithms/matlab/TremoSense_Model.pdf`](algorithms/matlab/TremoSense_Model.pdf))
+* Set the physical system parameters and controller weights in  [`algorithms/matlab/LQR_ARE.m`](algorithms/matlab/LQR_ARE.m) and run the script to obtain the `K_lqr` matrix
+* Set the constants in [`firmware/include/constants.h`](firmware/include/constants.h) and `K_lqr` matrix obtained from previous step
 
 ## 👥 Project Contributors
 

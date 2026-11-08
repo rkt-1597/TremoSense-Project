@@ -11,3 +11,8 @@ zephyr-sdk-*/
 zephyr/
 modules/
 tools/
+build-host/
+__pycache__/
+*.pyc
+*.o
+*.so
