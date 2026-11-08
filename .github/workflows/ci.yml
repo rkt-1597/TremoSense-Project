@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  host-tests:
+    name: Host tests (ASan/UBSan) and static analysis
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build cppcheck clang-format
+      - name: Build and run host tests
+        run: |
+          cmake -S firmware/tests -B build-host -G Ninja
+          cmake --build build-host
+          ctest --test-dir build-host --output-on-failure
+      - name: cppcheck (portable core)
+        run: |
+          cppcheck --enable=warning,style,performance,portability --std=c99 \
+            --inline-suppr --error-exitcode=1 -I firmware/include \
+            firmware/src/estimation firmware/src/control firmware/src/common \
+            firmware/src/safety/safety.c firmware/src/sensors/imu_cal.c
+      - name: clang-format check (portable core and tests)
+        run: |
+          cd firmware
+          clang-format --dry-run --Werror -style=file:../.clang-format \
+            include/ekf.h include/lqr.h include/timing.h include/imu_cal.h \
+            include/safety.h include/control.h \
+            src/estimation/ekf.c src/control/lqr.c src/control/control.c \
+            src/common/timing.c src/sensors/imu_cal.c src/safety/safety.c \
+            tests/*.c tests/*.h
+
+  zephyr-build:
+    name: Zephyr firmware compile check
+    runs-on: ubuntu-22.04
+    container: zephyrprojectrtos/ci:v0.27.4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: TremoSense-Project
+      - name: Fetch Zephyr v4.0.0
+        run: |
+          west init --mr v4.0.0 zephyr-ws
+          cd zephyr-ws && west update --narrow -o=--depth=1 && west zephyr-export
+      - name: Build firmware
+        working-directory: zephyr-ws
+        run: |
+          west build -b xiao_ble/nrf52840/sense -p always ../TremoSense-Project/firmware -- \
+            -DDTC_OVERLAY_FILE=boards/xiao_ble.overlay -DCONF_FILE=boards/xiao_ble.conf
