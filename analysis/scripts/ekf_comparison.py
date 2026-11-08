@@ -32,9 +32,9 @@ P = lambda a: a.ctypes.data_as(fp)
 G, D2R, FS = 9.80665, np.pi/180, 208.0
 DT = 1.0/FS
 # --- assumptions (documented in documentation/verification-validation/EKF_COMPARISON.md) ---
-ACC_NOISE = 0.0009 * G * np.sqrt(FS/2)     # ~0.9 mg rms/axis: assumed, MEMS-class
-GYR_NOISE = np.deg2rad(0.007) * np.sqrt(FS/2)  # ~0.07 dps rms/axis: assumed
-GYR_BIAS = np.deg2rad(np.array([0.15, -0.10, 0.05]))  # residual after calibration: assumed
+ACC_NOISE = 0.0009 * G * np.sqrt(FS/2)     # density 0.9 mg/rtHz -> ~9 mg (0.09 m/s^2) rms per sample at 104 Hz bandwidth: assumed, MEMS-class
+GYR_NOISE = np.deg2rad(0.007) * np.sqrt(FS/2)  # density 0.007 dps/rtHz -> ~0.07 dps rms per sample: assumed
+GYR_BIAS = np.deg2rad(np.array([0.15, -0.10, 0.05]))  # raw bias; 90 % removed by calibration (residual = 0.1x): assumed
 TUNINGS = {"T1 Q=1e-9 R=1e-3": (1e-9, 1e-3), "T2 Q=1e-8 R=1e-3": (1e-8, 1e-3), "T3 Q=1e-7 R=1e-3": (1e-7, 1e-3), "T4 Q=1e-8 R=1e-1": (1e-8, 1e-1)}
 GATE = dict(band=3.0, scale=100.0)
 
