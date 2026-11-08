@@ -1,0 +1,8 @@
+# Applied to the portable firmware core (firmware/src/{estimation,control,safety,common,sensors/imu_cal.c},
+# their headers and firmware/tests). Zephyr glue keeps Zephyr's kernel style.
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 100
+AllowShortFunctionsOnASingleLine: None
+AlignConsecutiveAssignments: false
+SortIncludes: false

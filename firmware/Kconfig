@@ -1,0 +1,49 @@
+source "Kconfig.zephyr"
+
+config IMU_CALIBRATION_WHILE_TESTING
+        bool "Enable calibration  of IMU at boot"
+        default n
+        help
+                If enabled, the IMU is calibrated at boot: CAL_SAMPLES samples
+                (3 s at 208 Hz) are averaged for all 6 measurements
+                (accelerometer and gyroscope in x,y,z axes). The result is
+                accepted only if the board was still and level; otherwise the
+                calibration is retried and finally the servos stay at neutral.
+
+config PWM_TEST_RB_LED
+        bool "Enable PWM test for RB LED"
+        default n
+        help
+                If enabled, the RB LED will be used for testing PWM feature. 
+                Green LED indicates Roll Servo motor and Red LED indicates Pitch 
+                Servo motor.
+
+config CLEAR_SCREEN
+        bool "Clear screen before printing next values"
+        default n
+        help
+                If enabled, the console screen will be cleared before printing 
+                upcoming IMU, EKF and servo values.
+
+config TREMOSENSE_TELEMETRY_DECIMATION
+        int "Print one telemetry line every N control steps (0 = off)"
+        default 26
+        range 0 10000
+        help
+                The original firmware printed several lines per sample (208 Hz)
+                from the control path, which can block on the console and add
+                latency/jitter. 26 gives roughly 8 lines/s at 208 Hz.
+
+config TREMOSENSE_WATCHDOG
+        bool "Hardware watchdog supervising the control and actuation loops"
+        default y
+        select WATCHDOG
+        help
+                Resets the SoC if either loop stops progressing. After a reset
+                the actuation thread levels the servos immediately.
+
+config TREMOSENSE_WDT_TIMEOUT_MS
+        int "Watchdog timeout [ms]"
+        default 500
+        range 100 10000
+        depends on TREMOSENSE_WATCHDOG
