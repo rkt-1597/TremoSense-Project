@@ -21,7 +21,7 @@ Status values: **Verified-host** (executed on a PC with synthetic data), **Verif
 | TS-SW-009 | The actuation thread shall act on the latest command only. | audit D-08 | Inspection | TC-BLD-002 | Verified-build |
 | TS-SW-010 | Static analysis shall be clean on the portable core; the firmware shall build for the target. | quality | Analysis | TC-BLD-001..005 | Verified-host / -build |
 | TS-SAF-001 | Servo commands shall be finite and within the servo range before reaching the PWM. | D-03 | Test | TC-SAF-005, TC-INT-002 | Verified-host |
-| TS-SAF-002 | On IMU loss the output shall reach neutral within 150 ms (hold ≤ 100 ms + one actuation tick). *Proposed.* | safety policy | Test | TC-SAF-006, TC-INT-005, TC-HW-007 | Verified-host; hardware NOT RUN |
+| TS-SAF-002 | On IMU loss the actuator guard shall enter SAFE_NEUTRAL (start the slew-limited return to 90°) within 150 ms (hold ≤ 100 ms + one actuation tick). The pose itself reaches 90° after a further ≤ tilt/60 °/s (≤ 1.5 s over the full range; 0.42 s measured in simulation from a +20° tilt). *Proposed.* | safety policy | Test | TC-SAF-006, TC-INT-005, TC-HW-007 | Verified-host; hardware NOT RUN |
 | TS-SAF-003 | Return to neutral shall be slew-limited (≤ 60 °/s) and monotonic. *Proposed.* | comfort/spill risk | Test | TC-SAF-007 | Verified-host |
 | TS-SAF-004 | Recovery after a fault shall require 208 consecutive valid commands. *Proposed.* | avoid chatter | Test | TC-SAF-008 | Verified-host |
 | TS-SAF-005 | A firmware hang in either loop shall cause a hardware reset within 500 ms; the servos shall be levelled at boot. | D-09, D-13 | Test (hardware) | TC-HW-005, TC-HW-006 | Implemented; NOT RUN |

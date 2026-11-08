@@ -31,7 +31,7 @@ Environment for executed cases: Ubuntu, gcc, CMake/Ninja; target build with Zeph
 | TC-HW-004 | HIL | scope on supply rail during servo transients; battery discharge | droop, ripple, brown-out margin | TS-PERF-004, TS-SAF-007 | **NOT RUN** |
 | TC-HW-005 | HIL | force a loop hang (debug build) | reset ≤ 500 ms | TS-SAF-005 | **NOT RUN** |
 | TC-HW-006 | HIL | power-cycle with scope on PWM pins | neutral pulse train time-to-first-pulse | TS-SAF-005 | **NOT RUN** |
-| TC-HW-007 | HIL | disconnect IMU during run | neutral ≤ 150 ms, no spill with a test load | TS-SAF-002 | **NOT RUN** |
+| TC-HW-007 | HIL | disconnect IMU during run | SAFE_NEUTRAL entered ≤ 150 ms; pose at 90° within tilt/60 °/s thereafter; no spill with a test load | TS-SAF-002 | **NOT RUN** |
 | TC-HW-008 | HIL | continuous run on battery | runtime, voltage vs time | TS-PERF-004 | **NOT RUN** |
 | TC-HW-009 | HIL | mechanical range / pinch-point check at limits | no collision; set safe limits | R-05 | **NOT RUN** |
 | TC-HW-010 | HIL | block servo | detection/de-energise (not implemented) | TS-SAF-006 | **NOT RUN** |

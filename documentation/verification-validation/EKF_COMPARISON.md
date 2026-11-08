@@ -7,7 +7,7 @@ Reproduce: `gcc`-built batch harness `analysis/scripts/ekf_batch.c` driven by `a
 ## Setup
 
 - Sample rate 208 Hz; tremor amplitude 5.0° (roll), 3–8 Hz; 10 seeds per point.
-- Assumed IMU noise: accel 0.090 m/s² rms (~0.9 mg), gyro 0.0012 rad/s rms (~0.07 dps); residual gyro bias (dps) [0.015, -0.01, 0.005].
+- Assumed IMU noise: accel noise density 0.9 mg/√Hz, i.e. 0.090 m/s² rms per sample (≈ 9 mg), gyro noise density 0.007 dps/√Hz, i.e. 0.0012 rad/s rms per sample (≈ 0.07 dps); residual gyro bias (dps) [0.015, -0.01, 0.005].
 - Lever arms (IMU offset from pivot): [0.0, 0.03, 0.06, 0.1] m — IMU mounting on the real device is unknown.
 - Configs: **baseline** = verbatim legacy EKF with ms-quantised `dt`; **updated** = refactored EKF with exact `dt`; **gated** = updated + accel-norm gating (`EKF_GATE_*`, default off in firmware).
 - Gate: band 3.0 m/s², R scale ×100.
