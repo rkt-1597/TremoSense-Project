@@ -1,0 +1,11 @@
+  degenerate-config run: 666 numeric rejections handled
+  max |new - legacy| over 6000 samples = 0.000e+00 deg
+  burst window mean |roll err|: gated 0.264 deg, ungated 15.644 deg
+  legacy EKF, Q=R=0, after 5 updates: roll=-nan pitch=-nan
+test_ekf: 10397 checks, 0 failures
+test_lqr_timing_cal: 1640 checks, 0 failures
+  hold -> safe-neutral after 20 steps (96.2 ms)
+test_safety: 2532 checks, 0 failures
+  nominal 5 Hz/5 deg run: roll estimate RMS error 0.267 deg (synthetic, test tuning)
+  NaN burst -> guard recovered to ACTIVE; safe-neutral reached at step 420 (burst began at 400)
+test_control: 14453 checks, 0 failures

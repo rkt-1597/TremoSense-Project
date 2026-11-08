@@ -1,0 +1,6 @@
+build_baseline_main.log:            FLASH:       86696 B       788 KB     10.74%
+build_baseline_main.log:              RAM:       22592 B       256 KB      8.62%
+build_ledtest.log:            FLASH:       90164 B       788 KB     11.17%
+build_ledtest.log:              RAM:       24536 B       256 KB      9.36%
+build_pranshu_updates.log:            FLASH:       92772 B       788 KB     11.50%
+build_pranshu_updates.log:              RAM:       25560 B       256 KB      9.75%

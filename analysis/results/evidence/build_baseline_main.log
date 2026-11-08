@@ -1,0 +1,14 @@
+# toolchain: arm-none-eabi-gcc (15:13.2.rel1-2) 13.2.1 20231009; Zephyr v4.0.0; board xiao_ble/nrf52840/sense
+# last lines of build output:
+[1131/1135] Generating linker.cmd
+[1132/1135] Generating isr_tables.c, isr_tables_vt.ld, isr_tables_swi.ld
+[1133/1135] Building C object zephyr/CMakeFiles/zephyr_final.dir/misc/empty_file.c.obj
+[1134/1135] Building C object zephyr/CMakeFiles/zephyr_final.dir/isr_tables.c.obj
+[1135/1135] Linking C executable zephyr/zephyr.elf
+Memory region         Used Size  Region Size  %age Used
+           FLASH:       86696 B       788 KB     10.74%
+             RAM:       22592 B       256 KB      8.62%
+        IDT_LIST:           0 B        32 KB      0.00%
+Generating files from /tmp/orig/build/zephyr/zephyr.elf for board: xiao_ble
+Converted to uf2, output size: 173568, start address: 0x27000
+Wrote 173568 bytes to zephyr.uf2
